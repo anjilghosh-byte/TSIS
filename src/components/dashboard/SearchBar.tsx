@@ -1,16 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, MapPin, Navigation, Loader2 } from 'lucide-react';
+import { Search, MapPin, Navigation, Loader2, ShieldCheck, Compass } from 'lucide-react';
 import { DestinationInfo } from '../../types/location';
-import { searchLocations, getCurrentUserLocation } from '../../services/locationService';
+import { searchLocations } from '../../services/locationService';
 
 interface SearchBarProps {
   onSelectDestination: (destination: DestinationInfo) => void;
+  onPlanTripForDestination?: (destination: DestinationInfo) => void;
   onUseCurrentLocation: () => void;
   isLoadingLocation?: boolean;
 }
 
 export const SearchBar: React.FC<SearchBarProps> = ({
   onSelectDestination,
+  onPlanTripForDestination,
   onUseCurrentLocation,
   isLoadingLocation = false,
 }) => {
@@ -47,10 +49,20 @@ export const SearchBar: React.FC<SearchBarProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleSelect = (dest: DestinationInfo) => {
+  const handleSelectSafety = (dest: DestinationInfo) => {
     setQuery(dest.name);
     setIsOpen(false);
     onSelectDestination(dest);
+  };
+
+  const handleSelectPlan = (dest: DestinationInfo) => {
+    setQuery(dest.name);
+    setIsOpen(false);
+    if (onPlanTripForDestination) {
+      onPlanTripForDestination(dest);
+    } else {
+      onSelectDestination(dest);
+    }
   };
 
   return (
@@ -64,7 +76,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onFocus={() => query.trim().length >= 1 && setIsOpen(true)}
-            placeholder="Where are you going? (e.g. Digha Beach, Darjeeling, Goa)..."
+            placeholder="Search destination (e.g. Kolkata, Jaipur, Darjeeling, Goa)..."
             className="w-full bg-slate-900/90 text-white placeholder-slate-400 text-sm sm:text-base rounded-xl pl-12 pr-10 py-3.5 focus:outline-none focus:ring-2 focus:ring-sky-500/50 border border-slate-800"
           />
           {isSearching && (
@@ -77,29 +89,29 @@ export const SearchBar: React.FC<SearchBarProps> = ({
           type="button"
           onClick={onUseCurrentLocation}
           disabled={isLoadingLocation}
-          className="w-full sm:w-auto px-5 py-3.5 bg-sky-600 hover:bg-sky-500 disabled:bg-slate-800 text-white font-semibold text-xs sm:text-sm rounded-xl flex items-center justify-center gap-2 transition-all shadow-md shadow-sky-600/20 shrink-0"
+          className="w-full sm:w-auto px-5 py-3.5 bg-slate-800 hover:bg-slate-700 disabled:bg-slate-900 text-white font-semibold text-xs sm:text-sm rounded-xl flex items-center justify-center gap-2 transition-all border border-slate-700 shrink-0"
         >
           {isLoadingLocation ? (
             <Loader2 className="w-4 h-4 animate-spin text-white" />
           ) : (
-            <Navigation className="w-4 h-4" />
+            <Navigation className="w-4 h-4 text-emerald-400" />
           )}
-          <span>Use Current Location</span>
+          <span>Near Me</span>
         </button>
       </div>
 
-      {/* Autocomplete Dropdown */}
+      {/* Unified Search Dropdown with Dual Actions */}
       {isOpen && (
         <div className="absolute top-full left-0 right-0 mt-2 bg-slate-900/95 backdrop-blur-xl border border-slate-800 rounded-2xl shadow-2xl z-50 max-h-80 overflow-y-auto divide-y divide-slate-800/60">
           {results.length > 0 ? (
             results.map((dest) => (
               <div
                 key={dest.id}
-                onClick={() => handleSelect(dest)}
-                className="p-3.5 hover:bg-slate-800/80 cursor-pointer transition-colors flex items-center justify-between group"
+                onClick={() => handleSelectSafety(dest)}
+                className="p-3.5 hover:bg-slate-800/80 cursor-pointer transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-3 group"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-sky-500/10 text-sky-400 flex items-center justify-center group-hover:bg-sky-500 group-hover:text-white transition-colors">
+                  <div className="w-8 h-8 rounded-lg bg-sky-500/10 text-sky-400 flex items-center justify-center group-hover:bg-sky-500 group-hover:text-white transition-colors shrink-0">
                     <MapPin className="w-4 h-4" />
                   </div>
                   <div>
@@ -112,14 +124,36 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                     </div>
                   </div>
                 </div>
-                <span className="text-[11px] text-sky-400 font-medium group-hover:translate-x-1 transition-transform">
-                  Analyze &rarr;
-                </span>
+
+                {/* Dual Action Buttons */}
+                <div className="flex items-center gap-2 self-end sm:self-auto">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleSelectSafety(dest);
+                    }}
+                    className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold flex items-center gap-1 transition-colors border border-slate-700"
+                  >
+                    <ShieldCheck className="w-3.5 h-3.5 text-sky-400" />
+                    <span>Check Safety</span>
+                  </button>
+
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleSelectPlan(dest);
+                    }}
+                    className="px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold flex items-center gap-1 transition-colors shadow-md"
+                  >
+                    <Compass className="w-3.5 h-3.5" />
+                    <span>Plan My Trip</span>
+                  </button>
+                </div>
               </div>
             ))
           ) : (
             <div className="p-4 text-center text-slate-400 text-xs">
-              No matching destinations found. Press Enter or click anywhere to search global map coordinates.
+              No matching destinations found.
             </div>
           )}
         </div>

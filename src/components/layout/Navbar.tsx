@@ -1,12 +1,17 @@
 import React, { useState } from 'react';
-import { Shield, AlertTriangle, Users, Info, Compass, Menu, X, PhoneCall } from 'lucide-react';
+import { Shield, AlertTriangle, Users, Info, Compass, Menu, X, PhoneCall, User, LogOut, LogIn } from 'lucide-react';
 import { DataModeToggle } from '../common/DataModeToggle';
+import { UserProfile } from '../../services/authService';
 
 interface NavbarProps {
   currentTab: string;
   onSelectTab: (tab: string) => void;
   isDemoMode: boolean;
   onToggleDemoMode: (enabled: boolean) => void;
+  hasActivePlan?: boolean;
+  currentUser?: UserProfile | null;
+  onLoginClick?: () => void;
+  onLogout?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -14,12 +19,18 @@ export const Navbar: React.FC<NavbarProps> = ({
   onSelectTab,
   isDemoMode,
   onToggleDemoMode,
+  hasActivePlan = false,
+  currentUser,
+  onLoginClick,
+  onLogout,
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
 
   const navItems = [
     { id: 'home', label: 'Home', icon: Compass },
-    { id: 'analysis', label: 'Safety Analysis', icon: Shield },
+    { id: 'planner', label: 'Plan My Trip', icon: Compass, badge: '🧭' },
+    { id: 'analysis', label: 'Check Safety', icon: Shield },
     { id: 'sos', label: 'Emergency SOS', icon: AlertTriangle, badge: '🚨' },
     { id: 'contacts', label: 'Contacts', icon: Users },
     { id: 'about', label: 'How It Works', icon: Info },
@@ -73,9 +84,9 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <button
                   key={item.id}
                   onClick={() => onSelectTab(item.id)}
-                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-1.5 ${
                     isActive
-                      ? 'bg-sky-500/15 text-sky-400 border border-sky-500/30'
+                      ? 'bg-sky-500/15 text-sky-400 border border-sky-500/30 font-bold'
                       : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
                   }`}
                 >
@@ -86,11 +97,50 @@ export const Navbar: React.FC<NavbarProps> = ({
             })}
           </nav>
 
-          {/* Controls & Demo Toggle */}
-          <div className="flex items-center gap-3">
+          {/* Controls & Auth */}
+          <div className="flex items-center gap-2">
             <DataModeToggle isDemoMode={isDemoMode} onToggle={onToggleDemoMode} />
 
-            {/* Mobile menu trigger button */}
+            {/* Auth button */}
+            {currentUser ? (
+              <div className="relative">
+                <button
+                  onClick={() => setShowUserMenu(!showUserMenu)}
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-sky-500/10 border border-sky-500/30 text-sky-400 hover:bg-sky-500/20 transition text-sm font-medium"
+                >
+                  <div className="w-6 h-6 rounded-full bg-gradient-to-br from-sky-500 to-indigo-600 flex items-center justify-center text-xs text-white font-bold">
+                    {currentUser.name.charAt(0).toUpperCase()}
+                  </div>
+                  <span className="hidden sm:block max-w-[100px] truncate">{currentUser.name}</span>
+                </button>
+                {showUserMenu && (
+                  <div className="absolute right-0 mt-2 w-44 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl overflow-hidden">
+                    <button
+                      onClick={() => { onSelectTab('profile'); setShowUserMenu(false); }}
+                      className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-slate-300 hover:bg-slate-800 transition"
+                    >
+                      <User className="w-4 h-4" /> My Profile
+                    </button>
+                    <button
+                      onClick={() => { onLogout?.(); setShowUserMenu(false); }}
+                      className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-400 hover:bg-red-900/30 transition border-t border-slate-800"
+                    >
+                      <LogOut className="w-4 h-4" /> Sign Out
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <button
+                onClick={onLoginClick}
+                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-700 text-slate-300 hover:text-white hover:border-sky-500 transition text-sm font-medium"
+              >
+                <LogIn className="w-4 h-4" />
+                <span>Sign In</span>
+              </button>
+            )}
+
+            {/* Mobile menu trigger */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="md:hidden p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"
@@ -132,6 +182,33 @@ export const Navbar: React.FC<NavbarProps> = ({
               </button>
             );
           })}
+
+          {/* Mobile auth row */}
+          <div className="pt-2 border-t border-slate-800">
+            {currentUser ? (
+              <>
+                <button
+                  onClick={() => { onSelectTab('profile'); setMobileMenuOpen(false); }}
+                  className="w-full flex items-center gap-3 px-4 py-3 text-sm text-slate-300 hover:bg-slate-800 rounded-lg"
+                >
+                  <User className="w-5 h-5" /> My Profile
+                </button>
+                <button
+                  onClick={() => { onLogout?.(); setMobileMenuOpen(false); }}
+                  className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-400 hover:bg-red-900/20 rounded-lg"
+                >
+                  <LogOut className="w-5 h-5" /> Sign Out
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={() => { onLoginClick?.(); setMobileMenuOpen(false); }}
+                className="w-full flex items-center gap-3 px-4 py-3 text-sm text-sky-400 hover:bg-slate-800 rounded-lg"
+              >
+                <LogIn className="w-5 h-5" /> Sign In / Register
+              </button>
+            )}
+          </div>
         </div>
       )}
     </header>

@@ -5,9 +5,12 @@ import { Footer } from './components/layout/Footer';
 
 import { HomePage } from './pages/HomePage';
 import { DestinationAnalysisPage } from './pages/DestinationAnalysisPage';
+import { TravelPlannerPage } from './pages/TravelPlannerPage';
 import { SosPage } from './pages/SosPage';
 import { ContactsPage } from './pages/ContactsPage';
 import { AboutPage } from './pages/AboutPage';
+import { AuthPages } from './components/auth/AuthPages';
+import { UserProfilePage } from './pages/UserProfilePage';
 
 import { DestinationInfo, LocationCoordinates } from './types/location';
 import { EmergencyContact } from './types/sos';
@@ -15,19 +18,21 @@ import { EmergencyContact } from './types/sos';
 import { POPULAR_DESTINATIONS, getCurrentUserLocation } from './services/locationService';
 import { getStoredEmergencyContacts, saveEmergencyContacts } from './services/emergencyService';
 import { isDemoModeEnabled, setDemoModeEnabled } from './utils/storage';
+import { getCurrentUser, logout, UserProfile } from './services/authService';
 
 export const App: React.FC = () => {
   const [currentTab, setCurrentTab] = useState<string>('home');
   const [selectedDestination, setSelectedDestination] = useState<DestinationInfo>(
-    POPULAR_DESTINATIONS[0] // Default Digha Beach
+    POPULAR_DESTINATIONS[0]
   );
   const [userLocation, setUserLocation] = useState<LocationCoordinates | undefined>(undefined);
   const [isLoadingLocation, setIsLoadingLocation] = useState<boolean>(false);
   const [isDemoMode, setIsDemoMode] = useState<boolean>(isDemoModeEnabled());
   const [contacts, setContacts] = useState<EmergencyContact[]>(getStoredEmergencyContacts());
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(getCurrentUser());
+  const [showAuth, setShowAuth] = useState<boolean>(false);
 
   useEffect(() => {
-    // Attempt background geolocation request on load
     getCurrentUserLocation()
       .then((coords) => setUserLocation(coords))
       .catch((err) => console.log('Geolocation initially passive:', err.message));
@@ -46,6 +51,12 @@ export const App: React.FC = () => {
   const handleSelectDestination = (dest: DestinationInfo) => {
     setSelectedDestination(dest);
     setCurrentTab('analysis');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handlePlanTripForDestination = (dest: DestinationInfo) => {
+    setSelectedDestination(dest);
+    setCurrentTab('planner');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -74,29 +85,75 @@ export const App: React.FC = () => {
     }
   };
 
+  const handleAuthSuccess = (user: UserProfile) => {
+    setCurrentUser(user);
+    setShowAuth(false);
+  };
+
+  const handleLogout = () => {
+    logout();
+    setCurrentUser(null);
+    setCurrentTab('home');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleNavTab = (tab: string) => {
+    if (tab === 'login') {
+      setShowAuth(true);
+      return;
+    }
+    setCurrentTab(tab);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  if (showAuth) {
+    return (
+      <AuthPages
+        onAuthSuccess={handleAuthSuccess}
+        onBackToApp={() => setShowAuth(false)}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-slate-950 text-slate-100 selection:bg-sky-500 selection:text-white">
-      {/* Top Disclaimer Banner */}
       <DisclaimerBanner />
 
-      {/* Main Navbar */}
       <Navbar
         currentTab={currentTab}
-        onSelectTab={(tab) => {
-          setCurrentTab(tab);
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        }}
+        onSelectTab={handleNavTab}
         isDemoMode={isDemoMode}
         onToggleDemoMode={handleToggleDemoMode}
+        currentUser={currentUser}
+        onLoginClick={() => setShowAuth(true)}
+        onLogout={handleLogout}
       />
 
-      {/* Page Body View Routing */}
       <main className="flex-1">
         {currentTab === 'home' && (
           <HomePage
             onSelectDestination={handleSelectDestination}
+            onPlanTripForDestination={handlePlanTripForDestination}
+            onOpenTripPlanner={() => {
+              setCurrentTab('planner');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
             onUseCurrentLocation={handleUseCurrentLocation}
             isLoadingLocation={isLoadingLocation}
+            currentUser={currentUser}
+            onLoginClick={() => setShowAuth(true)}
+          />
+        )}
+
+        {currentTab === 'planner' && (
+          <TravelPlannerPage
+            initialDestination={selectedDestination}
+            userLocation={userLocation}
+            onUseCurrentLocation={handleUseCurrentLocation}
+            isLoadingLocation={isLoadingLocation}
+            isDemoMode={isDemoMode}
+            onSelectDestinationForSafety={handleSelectDestination}
+            currentUser={currentUser}
           />
         )}
 
@@ -124,10 +181,18 @@ export const App: React.FC = () => {
           <ContactsPage contacts={contacts} onSaveContacts={handleSaveContacts} />
         )}
 
+        {currentTab === 'profile' && currentUser && (
+          <UserProfilePage
+            user={currentUser}
+            onLogout={handleLogout}
+            onSelectDestination={handleSelectDestination}
+            onPlanTrip={handlePlanTripForDestination}
+          />
+        )}
+
         {currentTab === 'about' && <AboutPage />}
       </main>
 
-      {/* Persistent Footer */}
       <Footer
         onSelectTab={(tab) => {
           setCurrentTab(tab);
