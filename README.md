@@ -1421,4 +1421,121 @@ Check:
 * Network access
 * Migrations
 * Database status
-```,Description:
+
+---
+
+# Project Philosophy
+
+TSIS follows one important principle:
+
+> **Technology should assist the traveler, not create false confidence.**
+
+The application should always prefer:
+
+**Verified information over generated information.**
+
+**Safety over convenience.**
+
+**Transparency over false certainty.**
+
+**Useful recommendations over excessive recommendations.**
+
+---
+
+# Why TSIS Is Different
+
+TSIS isn't trying to replace every travel application.
+
+Instead, it connects several problems that tourists normally solve separately.
+
+A typical traveler might use:
+
+```text
+Weather App
+     +
+Google/Search
+     +
+News App
+     +
+Travel Planner
+     +
+Maps
+     +
+Emergency Contacts
+```
+
+TSIS attempts to bring these into one intelligent ecosystem:
+
+```text
+             ┌──────────────────┐
+             │      TSIS        │
+             └────────┬─────────┘
+                      │
+       ┌──────────────┼──────────────┐
+       ↓              ↓              ↓
+   DISCOVER        ASSESS          RESPOND
+       │              │              │
+   Tourist         Weather          SOS
+   Guide           News             Emergency
+   Places          Safety
+       │            Crime
+       └──────┬─────┘
+              ↓
+         SMART PLAN
+              │
+              ↓
+        DAY-WISE TRIP
+```
+
+---
+
+# Project USP in One Sentence
+
+> **TSIS is a safety-aware travel intelligence platform that combines destination discovery, personalized itinerary planning, weather and safety assessment, recent information, and emergency assistance in one system.**
+
+---
+
+# The Idea Behind TSIS
+
+Travel should not simply be:
+
+> **"Go somewhere."**
+
+It should be:
+
+> **"Know where you're going, understand the conditions, plan intelligently, and stay prepared."**
+
+That's what TSIS is built for.
+
+---
+
+# For Developers
+
+Before modifying TSIS:
+
+1. Understand the existing architecture.
+2. Do not duplicate services.
+3. Keep API integrations modular.
+4. Never hardcode API keys.
+5. Validate external data.
+6. Do not trust AI-generated factual information without grounding.
+7. Test geographical accuracy.
+8. Do not break existing features.
+9. Handle API failures gracefully.
+10. Keep the application runnable after every major change.
+
+---
+
+# License
+
+MIT License
+
+---
+
+# TSIS
+
+### **Explore with confidence. Plan intelligently. Stay prepared.**
+
+**Tourist Safety Intelligence System**
+
+> **Know Before You Go.**
